@@ -1,12 +1,11 @@
 /*
 AUTHOR: EVAN CONWAY
 
-This program is designed to hep the user learn hex and binary. It presents the user with a number in hex, binary, or
-decimal and the user must type in the hex, binary, or decimal equivalent. Settings are configurable through simple
+This program is designed to hep the user learn HEX and BINARY. It presents the user with a number in HEX, BINARY, or
+decimal and the user must type in the HEX, BINARY, or decimal equivalent. Settings are configurable through simple
 commands.
  */
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Random;
@@ -25,55 +24,52 @@ public class main {
 
     private static final String commandChar = "#";
     private static final String commandHelp = "HELP";
-    private static final String commandSetBit = "BIT";
+    private static final String commandSetNibbles = "NIBBLES";
     private static final String commandSetShow = "SHOW";
     private static final String commandSetAnswer = "ANSWER";
     private static final String commandSetSign = "SIGN";
+    private static final String commandGiveAnswer = "GIVEANSWER";
     private static final String commandQuit = "QUIT";
 
     private static final String commandsList =
-        "\nCommands: \n" +
-        commandChar + commandHelp + " : List commandsList.\n" +
-        commandChar + commandSetBit + " X : Set Bit system to X. X must be an integer divisible by 4.\n" +
-        commandChar + commandSetShow + " X : Set show to X, where X is H, B, or D for hex, binary, and decimal.\n" +
-        commandChar + commandSetAnswer + " X : Set answer to X, where X is H, B, or D for hex, binary, and decimal.\n" +
-        commandChar + commandSetSign + " X : Set sign to X, where X is S, U, or R for signed, unsigned, and random.\n" +
-        commandChar + commandQuit + " : Quit the program.\n";
+            "\nCommands: \n" +
+                    commandChar + commandHelp + " : List commandsList.\n" +
+                    commandChar + commandSetNibbles + " X : Set Nibbles to X. 1 Nibble is 4 bits.\n" +
+                    commandChar + commandSetShow + " X : Set show to X, where X is H, B, or D for hex, binary, and decimal.\n" +
+                    commandChar + commandSetAnswer + " X : Set answer to X, where X is H, B, or D for hex, binary, and decimal.\n" +
+                    commandChar + commandSetSign + " X : Set sign to X, where X is S, U, or R for signed, unsigned, and random.\n" +
+                    commandChar + commandGiveAnswer + " : Display the answer.\n" +
+                    commandChar + commandQuit + " : Quit the program.\n";
 
-    private static int numOfBits = 4;// must be divisible by 4
-    private static int[] currentNumber = new int[numOfBits/4];
+    private static int nibbles = 4;// must be divisible by 4
     private static String show = hexChar;
     private static String answer = decimalChar;
-    private static String sign = unsignedChar;
-    private static String numberSign = sign;
-    private final static String[] hex = {"0", "1", "2", "3", "4", "5", "6", "7",
-            "8", "9", "A", "B", "C", "D", "E", "F"};
-    private final static String[] binary = {"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111",
-            "1000", "1001", "1010", "1011", "1100", "1101", "1111"};
-    private final static int[] decimal = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    private static String sign = signedChar;
     private static String response;
-    private static String numberString;
-    private static boolean generateNewNumber = true;
+    private static boolean answeredCorrect = true;
     private static boolean running = true;
+
+    private static HexNumber number;
 
     public static void main(String[] args) {
 
         System.out.println("\nHex Trainer\n" + commandsList);
 
         while (running) {
+            if (answeredCorrect) number = generateNumber();
             switch (show) {
                 case hexChar:
-                    System.out.print("Hex: ");
+                    System.out.print("Hex: " + number.getHexString());
                     break;
                 case binaryChar:
-                    System.out.print("Binary: ");
+                    System.out.print("Binary: " + number.getBinaryString());
                     break;
                 case decimalChar:
-                    System.out.print("Decimal: ");
+                    System.out.print("Decimal: " + number.getDecimalString());
                     break;
             }
-            if (generateNewNumber) System.out.println(generateNumber());
-            else System.out.println(numberString);
+            if (number.getSign()) System.out.println(" (signed)");
+            else System.out.println(" (unsigned)");
             switch (answer) {
                 case hexChar:
                     System.out.println("Hex: ");
@@ -94,7 +90,7 @@ public class main {
     }
 
     private static String command(String input) {
-        String result;
+        String result = new String();
         String[] argsArray = commandArgs(input);
         if (argsArray.length > 2) result = "Invalid command, too many arguments.";
         else {
@@ -102,16 +98,17 @@ public class main {
                 case commandHelp:
                     result = commandsList;
                     break;
-                case commandSetBit:
+                case commandSetNibbles:
                     int possBit;
                     try {
                         possBit = Integer.parseInt(argsArray[1]);
-                        if (possBit%4 == 0) {
-                            numOfBits = possBit;
-                            result = "Bit system set to " + possBit;
-                        } else result = "Number must be integer divisible by 4.";
+                        if (possBit > 0) {
+                            nibbles = possBit;
+                            result = "Nibbles set to " + possBit;
+                            number = generateNumber();
+                        } else result = "Number must be integer greater than 0.";
                     } catch (Exception e) {
-                        result = "Number must be integer divisible by 4.";
+                        result = "Number must be integer greater than 0.";
                     }
                     break;
                 case commandSetShow:
@@ -145,21 +142,34 @@ public class main {
                     }
                     break;
                 case commandSetSign:
-                    result = "Must enter S, U, or R after command";
+                    result = "Argument not recognized. Must enter S, U, or R after command";
                     if (argsArray[1].equalsIgnoreCase(signedChar)) {
                         sign = signedChar;
-                        numberSign = signedChar;
                         result = "Sign set to signed";
+                        number = generateNumber();
                     }
                     if (argsArray[1].equalsIgnoreCase(unsignedChar)) {
                         sign = unsignedChar;
-                        numberSign = unsignedChar;
                         result = "Sign set to unsigned";
+                        number = generateNumber();
                     }
                     if (argsArray[1].equalsIgnoreCase(randomSignChar)) {
                         sign = randomSignChar;
-                        numberSign = randomSignChar;
                         result = "Sign set to random";
+                        number = generateNumber();
+                    }
+                    break;
+                case commandGiveAnswer:
+                    switch(answer) {
+                        case hexChar:
+                            result = number.getHexString();
+                            break;
+                        case binaryChar:
+                            result = number.getBinaryString();
+                            break;
+                        case decimalChar:
+                            result = number.getDecimalString();
+                            break;
                     }
                     break;
                 case commandQuit:
@@ -176,11 +186,22 @@ public class main {
 
     private static String answer(String input) {
         String result;
-        input = input.replaceAll("\\s+","");
-        String check = numberString.replaceAll("\\s+","");
+        input = input.replaceAll("\\s+", "");
+        String check = new String();
+        switch (answer) {
+            case hexChar:
+                check = number.getHexString().replaceAll("\\s+", "");
+                break;
+            case binaryChar:
+                check = number.getBinaryString().replaceAll("\\s+", "");
+                break;
+            case decimalChar:
+                check = number.getDecimalString().replaceAll("\\s+", "");
+                break;
+        }
         if (input.equalsIgnoreCase(check)) {
-            result = "correct";
-            generateNewNumber = true;
+            result = "\t\tYES";
+            answeredCorrect = true;
         } else result = "incorrect";
         return result;
     }
@@ -201,50 +222,25 @@ public class main {
                 word = "";
             }
         }
-        return (String[]) cmdArgs.toArray();
+        if (!word.isEmpty()) cmdArgs.add(word);
+        String[] result = new String[cmdArgs.size()];
+        for (int i = 0; i < result.length; i++) result[i] = cmdArgs.get(i);
+        return result;
     }
 
-    private static String generateNumber() {
-        generateNewNumber = false;
-        numberString = "";
-        int numberDecimal = 0;
-        if (sign.equals(randomSignChar)) {
-            if (rnd.nextInt(1) == 1) numberSign = signedChar;
-            else numberSign = unsignedChar;
+    private static HexNumber generateNumber() {
+        answeredCorrect = false;
+        HexNumber result;
+        int[] temp = new int[nibbles];
+        for (int i = 0; i < temp.length; i++) {
+            temp[i] = rnd.nextInt(HexNumber.BASE);
         }
-        for (int i = 0; i < currentNumber.length; i++) {
-            currentNumber[i] = rnd.nextInt(hex.length);
-            numberDecimal += decimal[currentNumber[i]] * Math.pow(16, i);
-            switch (show) {
-                case hexChar:
-                    numberString += hex[currentNumber[i]];
-                    break;
-                case binaryChar:
-                    numberString += binary[currentNumber[i]];
-                    if (i != currentNumber.length - 1) numberString += ' ';
-                    break;
-                case decimalChar:
-                    if (i == currentNumber.length - 1) {
-                        if (numberSign.equals(signedChar)) numberDecimal -= Math.pow(2, numOfBits);
-                        numberString = Integer.toString(numberDecimal);
-                    }
-                    break;
-            }
+        if (sign.equalsIgnoreCase(randomSignChar)) {
+            result = new HexNumber(temp, rnd.nextBoolean());
+        } else {
+            if (sign.equalsIgnoreCase(signedChar)) result = new HexNumber(temp, true);
+            else result = new HexNumber(temp, false);
         }
-        switch (sign) {
-            case signedChar:
-                numberSign = signedChar;
-                numberString += " (signed)";
-                break;
-            case unsignedChar:
-                numberSign = unsignedChar;
-                numberString += " (unsigned)";
-                break;
-            case randomSignChar:
-                if (numberSign.equals(signedChar)) numberString += " (signed)";
-                else numberString += " (unsigned)";
-                break;
-        }
-        return numberString;
+        return result;
     }
 }
