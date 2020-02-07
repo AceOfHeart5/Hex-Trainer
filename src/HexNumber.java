@@ -3,7 +3,7 @@ HexNumber
 
 Stores an integer as an array of values. Each value in the values array corresponds to the values in the HEX and BINARY
 array. The index in the array translates to what power of 16 the value is multiplied by. For example, the
-array {2, 14, 8, 11} has 2 and index 0, 14 at index 1, 8 at index 2, and 11 at index 3. If we treat this value as
+array {2, 14, 8, 11} has 2 at index 0, 14 at index 1, 8 at index 2, and 11 at index 3. If we treat this value as
 unsigned, the calculation to convert it to decimal is:
 
 2*16^0 + 14*16^1 + 8*16^2 + 11*16^3 = 2 + 224 + 2048 + 45056 = 47330;
